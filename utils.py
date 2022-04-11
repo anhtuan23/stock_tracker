@@ -86,3 +86,22 @@ def calc_index_xirr(
             log_dataframe.loc[date_idx, index_name],  # type: ignore
         ],
     )
+
+
+def read_acc_cashflow(
+    acc_name: str,
+    user_name_list: list[str],
+) -> pd.DataFrame:
+    cf_df_list: list[pd.DataFrame] = []
+    for user_name in user_name_list:
+        cf_df = pd.read_csv(
+            f"./stock_data - {user_name}_cashflow.csv",
+            index_col="date",
+            parse_dates=True,
+        )
+        cf_df_list.append(cf_df)
+
+    acc_cf_df: pd.DataFrame = pd.concat(cf_df_list, axis=1)
+    acc_cf_df[acc_name] = acc_cf_df.sum(axis=1)
+
+    return acc_cf_df

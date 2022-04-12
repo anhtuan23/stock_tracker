@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 def add_diff_column(df: pd.DataFrame) -> pd.DataFrame:
@@ -43,6 +44,7 @@ def add_acc_combined_cols(
     df[f"{acc_combined_name}_diff"] = df[diff_acc_column_name_l].sum(axis=1)
     return df
 
+
 def add_index_combined_cols(
     df: pd.DataFrame,
     index_combined_name: str,
@@ -54,4 +56,22 @@ def add_index_combined_cols(
     # Combined diff col is mean of individual index diff cols
     diff_index_column_name_l = [f"{index_name}_diff" for index_name in index_name_l]
     df[f"{index_combined_name}_diff"] = df[diff_index_column_name_l].mean(axis=1)
+    return df
+
+
+def add_diff_percent(
+    df: pd.DataFrame,
+    acc_name_combined_l: list[str],
+    index_name_combined_l: list[str],
+) -> pd.DataFrame:
+    """Add diff percent and auxiliary diff percent"""
+    for name in acc_name_combined_l + index_name_combined_l:
+
+        df[f"{name}_diff_p"] = df[f"{name}_diff"] / df[name].shift()
+
+        # Replace inf values with nan in diff_p (otherwise, growth would be infinite)
+        df[f"{name}_diff_p"] = df[f"{name}_diff_p"].replace([np.inf, -np.inf], np.nan)
+
+        df[f"{name}_aux_diff_p"] = df[f"{name}_diff_p"] + 1
+
     return df

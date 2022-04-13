@@ -75,3 +75,7 @@ def add_diff_percent(
         df[f"{name}_aux_diff_p"] = df[f"{name}_diff_p"] + 1
 
     return df
+
+
+def filter_latest_x_rows(df: pd.DataFrame, row_num: int) -> pd.DataFrame:
+    return df.iloc[-row_num:]  # type: ignore

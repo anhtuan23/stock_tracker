@@ -62,11 +62,11 @@ def add_index_combined_cols(
 
 def add_diff_percent(
     df: pd.DataFrame,
-    acc_name_combined_l: list[str],
+    all_acc_name_l: list[str],
     index_name_combined_l: list[str],
 ) -> pd.DataFrame:
     """Add diff percent and auxiliary diff percent"""
-    for name in acc_name_combined_l + index_name_combined_l:
+    for name in all_acc_name_l + index_name_combined_l:
 
         df[f"{name}_diff_p"] = df[f"{name}_diff"] / df[name].shift()
 
@@ -94,7 +94,7 @@ def get_period_df(
     period_symbol: str,
     df: pd.DataFrame,
     cashflow_df: pd.DataFrame,
-    acc_name_combined_l: list[str],
+    all_acc_name_l: list[str],
     index_name_combined_l: list[str],
 ) -> pd.DataFrame:
     period_l = df[period_symbol].unique()
@@ -105,18 +105,18 @@ def get_period_df(
         period_filt = df[period_symbol] == period
         period_df = df.loc[period_filt]
 
-        for name in acc_name_combined_l + index_name_combined_l:
+        for name in all_acc_name_l + index_name_combined_l:
             period_growth = period_df[f"{name}_aux_diff_p"].product()  # type: ignore
             period_data_dict[f"{name}_growth"] = (period_growth - 1) * 100  # type: ignore
 
-        for acc_name in acc_name_combined_l:
+        for acc_name in all_acc_name_l:
             period_xirr = utils.calc_cashflow_xirr(
                 cashflow_df,
                 df,
                 anchor_date=period_df.index[0],  # type: ignore
                 date_idx=period_df.index[-1],  # type: ignore
                 col_name=acc_name,
-                user_name_combined_l=acc_name_combined_l,
+                user_name_combined_l=all_acc_name_l,
             )  # type: ignore
             period_data_dict[f"{acc_name}_xirr"] = period_xirr * 100  # type: ignore
 

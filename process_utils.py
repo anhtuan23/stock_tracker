@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import utils
 
 
 def add_diff_column(df: pd.DataFrame) -> pd.DataFrame:
@@ -79,3 +80,60 @@ def add_diff_percent(
 
 def filter_latest_x_rows(df: pd.DataFrame, row_num: int) -> pd.DataFrame:
     return df.iloc[-row_num:]  # type: ignore
+
+
+def add_period_cols(df: pd.DataFrame) -> pd.DataFrame:
+    df["Y"] = df.index.to_period("Y")  # type: ignore
+    df["Q"] = df.index.to_period("Q")  # type: ignore
+    df["M"] = df.index.to_period("M")  # type: ignore
+    df["W"] = df.index.to_period("W")  # type: ignore
+    return df
+
+
+def get_period_df(
+    period_symbol: str,
+    df: pd.DataFrame,
+    cashflow_df: pd.DataFrame,
+    acc_name_combined_l: list[str],
+    index_name_combined_l: list[str],
+) -> pd.DataFrame:
+    period_l = df[period_symbol].unique()
+
+    data = []
+    for period in period_l:
+        period_data_dict = {"period": period}
+        period_filt = df[period_symbol] == period
+        period_df = df.loc[period_filt]
+
+        for name in acc_name_combined_l + index_name_combined_l:
+            period_growth = period_df[f"{name}_aux_diff_p"].product()  # type: ignore
+            period_data_dict[f"{name}_growth"] = (period_growth - 1) * 100  # type: ignore
+
+        for acc_name in acc_name_combined_l:
+            period_xirr = utils.calc_cashflow_xirr(
+                cashflow_df,
+                df,
+                anchor_date=period_df.index[0],  # type: ignore
+                date_idx=period_df.index[-1],  # type: ignore
+                col_name=acc_name,
+                user_name_combined_l=acc_name_combined_l,
+            )  # type: ignore
+            period_data_dict[f"{acc_name}_xirr"] = period_xirr * 100  # type: ignore
+
+            period_data_dict[f"{acc_name}_income"] = period_df[f"{acc_name}_diff"].sum()  # type: ignore
+
+        for index_name in index_name_combined_l:
+            period_xirr = utils.calc_index_xirr(
+                df,
+                anchor_date=period_df.index[0],  # type: ignore
+                date_idx=period_df.index[-1],  # type: ignore
+                index_name=index_name,
+            )  # type: ignore
+            period_data_dict[f"{index_name}_xirr"] = period_xirr * 100  # type: ignore
+
+        data.append(period_data_dict)
+
+    period_df = pd.DataFrame(data)
+    period_df = period_df.set_index("period")
+    period_df.index = period_df.index.to_series().astype(str)
+    return period_df

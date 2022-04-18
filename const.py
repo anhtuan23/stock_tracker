@@ -1,6 +1,6 @@
 ACC_USER_DICT = {
     "acc1": ["ta", "tn"],
-    "acc2": ["tl"],
+    "acc2": ["tl", "la"],
 }
 
 ACC_NAME_L = list(ACC_USER_DICT.keys())

@@ -244,12 +244,27 @@ def plot_profit_invest_pies(profit_invest_list: list[tuple[str, float, float]]):
     fig, ax_l = plt.subplots(figsize=(width_per_pie * chart_num, 5), ncols=chart_num, facecolor="white")  # type: ignore
 
     for (name, profit, invest), ax in zip(profit_invest_list, ax_l):  # type: ignore
+        nav = profit + invest
+        # If profit is positive, plot pie chart of profit & invest
         if profit > 0:
-            profit_label = f"Profit:{profit:,}"
-            invest_label = f"Invest:{invest:,}"
+            profit_label = f"Profit:{profit:,.0f}"
+            invest_label = f"Invest:{invest:,.0f}"
             ax.pie(
-                [profit, invest], labels=[profit_label, invest_label], autopct="%1.1f%%"
+                [profit, invest],
+                labels=[profit_label, invest_label],
+                autopct="%1.1f%%",
+                colors=["green", "orange"],
             )
-
-            nav = profit + invest
-            ax.set_title(f"{name}:{nav:,}")
+            ax.set_title(f"{name} NAV:{nav:,.0f}")
+        # Else, plot pie chart of NAV & lost
+        else:
+            loss = -profit
+            loss_label = f"Loss:{loss:,.0f}"
+            nav_label = f"NAV:{nav:,.0f}"
+            ax.pie(
+                [loss, nav],
+                labels=[loss_label, nav_label],
+                autopct="%1.1f%%",
+                colors=["red", "orange"],
+            )
+            ax.set_title(f"{name} Invest:{invest:,.0f}")

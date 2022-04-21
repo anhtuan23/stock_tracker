@@ -214,3 +214,15 @@ def plot_period_growth_xirr(
     _plot(ax3, ax4, "xirr")
 
     plt.show()
+
+
+def plot_nav_stackplot(x: list, y: list, labels: list[str]):
+    fig, ax = plt.subplots(figsize=(26, 8))
+    ax.stackplot(x, y, labels=labels)
+
+    # set labels to absolute values
+    # ax.set_yticklabels(abs(ax.get_yticks() / 1_000_000))
+
+    ax.set_title("NAV over time")
+    ax.legend(loc="upper left")
+    plt.show()

@@ -226,3 +226,30 @@ def plot_nav_stackplot(x: list, y: list, labels: list[str]):
     ax.set_title("NAV over time")
     ax.legend(loc="upper left")
     plt.show()
+
+
+def plot_nav_pie(nav_l: list, label_l: list[str]):
+    fig, ax = plt.subplots(figsize=(4, 4), facecolor="white")
+    ax.pie(nav_l, labels=label_l, autopct="%1.1f%%")
+    ax.set_title(f"Total Nav:{np.sum(nav_l):,}")
+    plt.show()
+
+
+def plot_profit_invest_pies(profit_invest_list: list[tuple[str, float, float]]):
+    """
+    profit_invest_list: list of tuple[name, profit, invest]
+    """
+    chart_num = len(profit_invest_list)
+    width_per_pie = 6
+    fig, ax_l = plt.subplots(figsize=(width_per_pie * chart_num, 5), ncols=chart_num, facecolor="white")  # type: ignore
+
+    for (name, profit, invest), ax in zip(profit_invest_list, ax_l):  # type: ignore
+        if profit > 0:
+            profit_label = f"Profit:{profit:,}"
+            invest_label = f"Invest:{invest:,}"
+            ax.pie(
+                [profit, invest], labels=[profit_label, invest_label], autopct="%1.1f%%"
+            )
+
+            nav = profit + invest
+            ax.set_title(f"{name}:{nav:,}")

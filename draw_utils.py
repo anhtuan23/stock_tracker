@@ -268,3 +268,26 @@ def plot_profit_invest_pies(profit_invest_list: list[tuple[str, float, float]]):
                 colors=["red", "orange"],
             )
             ax.set_title(f"{name} Invest:{invest:,.0f}")
+
+
+def plot_cum_growth(
+    ax: plt.Axes,
+    day_num: int,
+    acc_name: str,
+    cum_acc_growth: float,
+    index_name: str,
+    cum_index_growth: float,
+) -> None:
+    cum_diff_growth = cum_acc_growth - cum_index_growth
+    x = [acc_name, index_name, "diff"]
+    y = [cum_acc_growth, cum_index_growth, cum_diff_growth]
+    ax.bar(
+        x,
+        y,
+        width=0.5,
+        alpha=0.8,
+        color="dodgerblue",
+    )
+    ax.set_title(f"Cumulative growth for last {day_num} days")
+    ax.grid(True)
+    utils.add_labels(ax, x, y, color="dodgerblue")

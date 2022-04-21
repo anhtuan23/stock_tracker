@@ -139,14 +139,18 @@ def get_period_df(
     return period_df
 
 
+### User Analysis
+
+
 def get_user_df(
     log_df: pd.DataFrame,
     cf_df: pd.DataFrame,
     acc_name: str,
     user_name_l: list[str],
+    index_name: str,
 ) -> pd.DataFrame:
     # Get data from log_df
-    acc_df = log_df[[acc_name, f"{acc_name}_diff"]]
+    acc_df = log_df[[index_name, f"{index_name}_diff", acc_name, f"{acc_name}_diff"]]
 
     # Get data from cashflow dataframe
     acc_cf_df = cf_df[user_name_l]
@@ -158,27 +162,27 @@ def get_user_df(
     user_df = pd.concat([acc_df, acc_cf_df], axis=1)
     user_df.fillna(0, inplace=True)
 
-    user_df["day_start_nav"] = user_df[acc_name] - user_df[f"{acc_name}_diff"]
+    user_df["day_start"] = user_df[acc_name] - user_df[f"{acc_name}_diff"]
 
-    # Delete rows with day_start_nav == 0 (the first row in this case)
-    user_df = user_df[user_df["day_start_nav"] != 0]
+    # Delete rows with day_start == 0 (the first row in this case)
+    user_df = user_df[user_df["day_start"] != 0]
 
     # Calculating share of each user
     yesterday_user_nav_dict = {user_name: 0.0 for user_name in user_name_l}
     for date in user_df.index:
-        day_start_nav: float = user_df.loc[date, "day_start_nav"]  # type:ignore
+        day_start: float = user_df.loc[date, "day_start"]  # type:ignore
 
         for user_name in user_name_l:
             # Get day start nav using yesterday nav and today cashflow
-            user_day_start_nav: float = (
+            user_day_start: float = (
                 # Investment is saved as negative number in cashflow
                 yesterday_user_nav_dict[user_name]
                 - user_df.loc[date, f"{user_name}_cf"]  # type:ignore
             )
 
-            user_df.loc[date, f"{user_name}_day_start_nav"] = user_day_start_nav
+            user_df.loc[date, f"{user_name}_day_start"] = user_day_start
 
-            user_share = user_day_start_nav / day_start_nav
+            user_share = user_day_start / day_start
             user_df.loc[date, f"{user_name}_share"] = user_share
 
             user_diff: float = (
@@ -186,8 +190,31 @@ def get_user_df(
             )
             user_df.loc[date, f"{user_name}_diff"] = user_diff
 
-            user_day_end_nav = user_day_start_nav + user_diff
+            user_day_end_nav = user_day_start + user_diff
             user_df.loc[date, f"{user_name}"] = user_day_end_nav
             yesterday_user_nav_dict[user_name] = user_day_end_nav
+
+    return user_df
+
+
+def add_user_diff_percent(
+    user_df: pd.DataFrame,
+    acc_name: str,
+    index_name: str,
+) -> pd.DataFrame:
+    """Add diff percent and auxiliary diff percent"""
+    user_df[f"{index_name}_day_start"] = user_df[index_name].shift()
+    for name in [acc_name, index_name]:
+
+        user_df[f"{name}_diff_p"] = (
+            user_df[f"{name}_diff"] / user_df[f"{name}_day_start"]
+        )
+
+        # Replace inf values with nan in diff_p (otherwise, growth would be infinite)
+        user_df[f"{name}_diff_p"] = user_df[f"{name}_diff_p"].replace(
+            [np.inf, -np.inf], np.nan
+        )
+
+        user_df[f"{name}_aux_diff_p"] = user_df[f"{name}_diff_p"] + 1
 
     return user_df

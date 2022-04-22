@@ -487,3 +487,33 @@ def plot_recent_xirr(
     ax1.grid(True)
 
     plt.show()
+
+
+def plot_recent_income(
+    recent_daily_df: pd.DataFrame,
+    name_l: list[str],
+    color_l: list[str],
+):
+    fig, ax = plt.subplots(figsize=(18, 6))  # type: ignore
+
+    for name, color in zip(
+        name_l,
+        color_l,
+    ):
+        income_l = recent_daily_df[f"{name}_diff"]
+        ax.plot_date(
+            recent_daily_df.index,
+            income_l,  # type: ignore
+            fmt="-",
+            label=name,
+            color=color,
+        )
+
+        label_l = [f"{income:,.0f}" for income in income_l]
+        utils.add_labels(ax, recent_daily_df.index, income_l, label_l=label_l, color=color)  # type: ignore
+
+    ax.set_title("Daily Income")
+    ax.grid(True)
+    ax.legend()
+
+    plt.show()

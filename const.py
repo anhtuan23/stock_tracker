@@ -14,3 +14,15 @@ VN30_NAME = "vn30"
 INDEX_NAME_L = [VNI_NAME, VN30_NAME]
 INDEX_COMBINED_NAME = "index_combined"
 ALL_INDEX_NAME_L = INDEX_NAME_L + [INDEX_COMBINED_NAME]
+
+COLOR_LIST = [
+    "dodgerblue",
+    "darkorange",
+    "darkgreen",
+    "darkviolet",
+    "aqua",
+    "tomato",
+    "peru",
+    "mediumspringgreen",
+    "magenta",
+]

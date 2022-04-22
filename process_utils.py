@@ -234,6 +234,12 @@ def get_user_df(
             user_df.loc[date, f"{user_name}"] = user_day_end_nav
             yesterday_user_nav_dict[user_name] = user_day_end_nav
 
+    user_df = _add_diff_percent(
+        user_df,
+        all_acc_name_l=[acc_name],
+        index_name_combined_l=[index_name],
+    )
+
     return user_df
 
 

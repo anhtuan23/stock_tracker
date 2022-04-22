@@ -295,12 +295,16 @@ def _plot_cum_growth(
 
 
 def plot_recent_growth(
-    recent_df: pd.DataFrame,
+    log_df: pd.DataFrame,
+    num_days: int,
     main_acc_name: str,
     main_index_name: str,
     secondary_acc_name_l: list[str],
     secondary_index_name_l: list[str],
 ):
+    # Filter recent days
+    recent_df = process_utils.filter_latest_x_rows(log_df, row_num=num_days)
+
     fig, (ax1, ax2, ax3) = plt.subplots(
         figsize=(28, 12),
         ncols=3,
@@ -361,36 +365,27 @@ def plot_recent_growth(
             label=single_name,
         )
 
-    ax1.set_title("Growth for last 10 days")
+    ax1.set_title(f"Growth for last {num_days} days")
     ax1.set_xticks(ticks=recent_df.index)
     ax1.legend()
     ax1.grid(True)
 
     # # * Cumulative growth bar plot
-    # Compare last 10 days
-    cum_acc_growth = (recent_df[f"{main_acc_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
-    cum_index_growth = (recent_df[f"{main_index_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
-    _plot_cum_growth(
-        ax=ax2,
-        day_num=10,
-        acc_name=main_acc_name,
-        cum_acc_growth=cum_acc_growth,
-        index_name=main_index_name,
-        cum_index_growth=cum_index_growth,
-    )
+    for ax in [ax2, ax3]:
+        recent_df = process_utils.filter_latest_x_rows(recent_df, row_num=num_days)
 
-    # Compare last 5 days
-    recent_df = process_utils.filter_latest_x_rows(recent_df, row_num=5)
-    cum_acc_growth = (recent_df[f"{main_acc_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
-    cum_index_growth = (recent_df[f"{main_index_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
-    _plot_cum_growth(
-        ax=ax3,
-        day_num=5,
-        acc_name=main_acc_name,
-        cum_acc_growth=cum_acc_growth,
-        index_name=main_index_name,
-        cum_index_growth=cum_index_growth,
-    )
+        cum_acc_growth = (recent_df[f"{main_acc_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
+        cum_index_growth = (recent_df[f"{main_index_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
+        _plot_cum_growth(
+            ax=ax,
+            day_num=num_days,
+            acc_name=main_acc_name,
+            cum_acc_growth=cum_acc_growth,
+            index_name=main_index_name,
+            cum_index_growth=cum_index_growth,
+        )
+
+        num_days = num_days // 2
 
     plt.show()
 
@@ -398,7 +393,7 @@ def plot_recent_growth(
 def plot_recent_xirr(
     log_df: pd.DataFrame,
     cf_df: pd.DataFrame,
-    recent_dates_index: pd.Index,
+    num_days: int,
     anchor_date: str,
     main_acc_name: str,
     main_index_name: str,
@@ -408,11 +403,14 @@ def plot_recent_xirr(
     """
     anchor_date: str, e.g. "2020-01-31"
     """
+    # Filter recent days
+    recent_df = process_utils.filter_latest_x_rows(log_df, row_num=num_days)
+    
     all_acc_name_l = [main_acc_name] + secondary_acc_name_l
     all_index_name_l = [main_index_name] + secondary_index_name_l
 
     xirr_data = {name: [] for name in all_acc_name_l + all_index_name_l}
-    for idx in recent_dates_index:
+    for idx in recent_df.index:
         for name in all_acc_name_l:
             xirr_data[name].append(
                 utils.calc_cashflow_xirr(
@@ -428,7 +426,7 @@ def plot_recent_xirr(
             xirr_data[idx_name].append(
                 utils.calc_index_xirr(log_df, anchor_date, idx, idx_name)
             )
-    xirr_df = pd.DataFrame(xirr_data, index=recent_dates_index)
+    xirr_df = pd.DataFrame(xirr_data, index=recent_df.index)
 
     fig, ax1 = plt.subplots(figsize=(18, 6))  # type: ignore
 
@@ -490,19 +488,23 @@ def plot_recent_xirr(
 
 
 def plot_recent_income(
-    recent_daily_df: pd.DataFrame,
+    daily_df: pd.DataFrame,
+    num_days: int,
     name_l: list[str],
     color_l: list[str],
 ):
+    # Filter recent days
+    daily_df = process_utils.filter_latest_x_rows(daily_df, row_num=num_days)
+    
     fig, ax = plt.subplots(figsize=(18, 6))  # type: ignore
 
     for name, color in zip(
         name_l,
         color_l,
     ):
-        income_l = recent_daily_df[f"{name}_diff"]
+        income_l = daily_df[f"{name}_diff"]
         ax.plot_date(
-            recent_daily_df.index,
+            daily_df.index,
             income_l,  # type: ignore
             fmt="-",
             label=name,
@@ -510,7 +512,7 @@ def plot_recent_income(
         )
 
         label_l = [f"{income:,.0f}" for income in income_l]
-        utils.add_labels(ax, recent_daily_df.index, income_l, label_l=label_l, color=color)  # type: ignore
+        utils.add_labels(ax, daily_df.index, income_l, label_l=label_l, color=color)  # type: ignore
 
     ax.set_title("Daily Income")
     ax.grid(True)

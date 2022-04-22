@@ -405,7 +405,7 @@ def plot_recent_xirr(
     """
     # Filter recent days
     recent_df = process_utils.filter_latest_x_rows(log_df, row_num=num_days)
-    
+
     all_acc_name_l = [main_acc_name] + secondary_acc_name_l
     all_index_name_l = [main_index_name] + secondary_index_name_l
 
@@ -495,7 +495,7 @@ def plot_recent_income(
 ):
     # Filter recent days
     daily_df = process_utils.filter_latest_x_rows(daily_df, row_num=num_days)
-    
+
     fig, ax = plt.subplots(figsize=(18, 6))  # type: ignore
 
     for name, color in zip(
@@ -517,5 +517,76 @@ def plot_recent_income(
     ax.set_title("Daily Income")
     ax.grid(True)
     ax.legend()
+
+    plt.show()
+
+
+def plot_daily_diff_p_distribution(
+    log_df: pd.DataFrame,
+    acc_name:str,
+    index_name: str,
+):
+    fig, (ax1, ax2) = plt.subplots(
+        figsize=(16, 5),
+        ncols=2,
+        gridspec_kw={"width_ratios": [3, 1]},
+    )  # type: ignore
+
+    index_diff_p_l = log_df[f"{index_name}_diff_p"] * 100
+    acc_diff_p_l = log_df[f"{acc_name}_diff_p"] * 100
+
+    # *** Histogram ***
+
+    bins = np.arange(-5, 5, 0.5).tolist()
+
+    # Index histogram
+    index_combined_median = index_diff_p_l.median()
+    ax1.hist(
+        index_diff_p_l,
+        bins=bins,
+        edgecolor="black",
+        alpha=0.25,
+        label=f"{index_name} - median:{index_combined_median:.2f}%",
+    )
+    index_diff_p_mean = index_diff_p_l.mean()  # type: ignore
+
+    ax1.axvline(
+        index_diff_p_mean,
+        color="blue",
+        linestyle="--",
+        label="index mean = %.2f%%" % index_diff_p_mean,
+        alpha=0.25,
+    )
+
+    # acc histogram
+    acc_combined_median = acc_diff_p_l.median()
+    ax1.hist(
+        acc_diff_p_l,
+        bins=bins,
+        edgecolor="black",
+        alpha=0.5,
+        label=f"{acc_name} - median:{acc_combined_median:.2f}%",
+    )
+    acc_diff_p_mean = acc_diff_p_l.mean()  # type: ignore
+    ax1.axvline(
+        acc_diff_p_mean,
+        color="red",
+        label="acc mean = %.2f%%" % acc_diff_p_mean,
+    )
+
+    ax1.set_title("Distribution of change of combined acc and index %")
+    ax1.legend()
+
+    # *** Win / Lose pie chart ***
+    win_num = (acc_diff_p_l > index_diff_p_l).sum()
+    lose_num = (acc_diff_p_l <= index_diff_p_l).sum()
+    ax2.pie(
+        [win_num, lose_num],
+        labels=[f"Win: {win_num}", f"Lose: {lose_num}"],
+        autopct="%1.1f%%",
+        startangle=90,
+        explode=[0.05, 0],
+    )
+    ax2.set_title("Win/Lose")
 
     plt.show()

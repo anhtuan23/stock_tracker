@@ -68,7 +68,7 @@ def _add_diff_percent(
     """Add diff percent and auxiliary diff percent"""
     for name in all_acc_name_l + index_name_combined_l:
 
-        df[f"{name}_diff_p"] = df[f"{name}_diff"] / df[name].shift()
+        df[f"{name}_diff_p"] = df[f"{name}_diff"] / (df[name] - df[f"{name}_diff"])
 
         # Replace inf values with nan in diff_p (otherwise, growth would be infinite)
         df[f"{name}_diff_p"] = df[f"{name}_diff_p"].replace([np.inf, -np.inf], np.nan)
@@ -239,28 +239,5 @@ def get_user_df(
         all_acc_name_l=[acc_name],
         index_name_combined_l=[index_name],
     )
-
-    return user_df
-
-
-def add_user_diff_percent(
-    user_df: pd.DataFrame,
-    acc_name: str,
-    index_name: str,
-) -> pd.DataFrame:
-    """Add diff percent and auxiliary diff percent"""
-    user_df[f"{index_name}_day_start"] = user_df[index_name].shift()
-    for name in [acc_name, index_name]:
-
-        user_df[f"{name}_diff_p"] = (
-            user_df[f"{name}_diff"] / user_df[f"{name}_day_start"]
-        )
-
-        # Replace inf values with nan in diff_p (otherwise, growth would be infinite)
-        user_df[f"{name}_diff_p"] = user_df[f"{name}_diff_p"].replace(
-            [np.inf, -np.inf], np.nan
-        )
-
-        user_df[f"{name}_aux_diff_p"] = user_df[f"{name}_diff_p"] + 1
 
     return user_df

@@ -523,7 +523,7 @@ def plot_recent_income(
 
 def plot_daily_diff_p_distribution(
     log_df: pd.DataFrame,
-    acc_name:str,
+    acc_name: str,
     index_name: str,
 ):
     fig, (ax1, ax2) = plt.subplots(
@@ -588,5 +588,66 @@ def plot_daily_diff_p_distribution(
         explode=[0.05, 0],
     )
     ax2.set_title("Win/Lose")
+
+    plt.show()
+
+
+def plot_growth_xirr_over_time(
+    growth_xirr_df: pd.DataFrame,
+    anchor_date: str,
+    main_acc_name: str,
+    main_index_name: str,
+    secondary_acc_name_l: list[str],
+    secondary_index_name_l: list[str],
+):
+    fig, (ax1, ax2) = plt.subplots(figsize=(26, 6), nrows=2)  # type: ignore
+
+    def _plot_overall_growth_xirr(
+        ax: plt.Axes,
+        growth_xirr_df: pd.DataFrame,
+        type: str,
+    ):
+        # Normalize growth from 0
+        if type == "growth":
+            growth_xirr_df = growth_xirr_df.applymap(lambda e: e - 100)
+
+        for combined_name in [main_acc_name, main_index_name]:
+            ax.plot_date(
+                growth_xirr_df.index,
+                growth_xirr_df[f"{combined_name}_{type}"],
+                fmt="-",
+                label=combined_name,
+            )
+            ax.text(
+                growth_xirr_df.index[-1],
+                growth_xirr_df[f"{combined_name}_{type}"].iloc[-1],  # type: ignore
+                f"{growth_xirr_df[f'{combined_name}_{type}'].iloc[-1]:.1f}",  # type: ignore
+            )
+
+        for single_name in secondary_acc_name_l:
+            ax.plot_date(
+                growth_xirr_df.index,
+                growth_xirr_df[f"{single_name}_{type}"],
+                fmt="-.",
+                alpha=0.7,
+                label=single_name,
+            )
+
+        for single_name in secondary_index_name_l:
+            ax.plot_date(
+                growth_xirr_df.index,
+                growth_xirr_df[f"{single_name}_{type}"],
+                fmt=":",
+                alpha=0.7,
+                label=single_name,
+            )
+
+        ax.set_title(f"{type} from {anchor_date}")
+        ax.legend(loc="upper left")
+        ax.grid(True)
+        fig.autofmt_xdate()
+
+    _plot_overall_growth_xirr(ax1, growth_xirr_df, "growth")
+    _plot_overall_growth_xirr(ax2, growth_xirr_df, "xirr")
 
     plt.show()

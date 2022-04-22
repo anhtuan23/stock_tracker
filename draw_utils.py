@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import utils
+import process_utils
 
 
 def plot_indices_over_time(
@@ -270,7 +271,7 @@ def plot_profit_invest_pies(profit_invest_list: list[tuple[str, float, float]]):
             ax.set_title(f"{name} Invest:{invest:,.0f}")
 
 
-def plot_cum_growth(
+def _plot_cum_growth(
     ax: plt.Axes,
     day_num: int,
     acc_name: str,
@@ -291,3 +292,104 @@ def plot_cum_growth(
     ax.set_title(f"Cumulative growth for last {day_num} days")
     ax.grid(True)
     utils.add_labels(ax, x, y, color="dodgerblue")
+
+
+def plot_recent_growth(
+    recent_df: pd.DataFrame,
+    main_acc_name: str,
+    main_index_name: str,
+    secondary_acc_name_l: list[str],
+    secondary_index_name_l: list[str],
+):
+    fig, (ax1, ax2, ax3) = plt.subplots(
+        figsize=(28, 12),
+        ncols=3,
+        sharey=True,
+        gridspec_kw={"width_ratios": [4, 1, 1]},
+    )  # type: ignore
+
+    # * Last x days line plot
+    ## Solid main lines
+    for solid_name, color in zip(
+        [main_acc_name, main_index_name],
+        ["lightseagreen", "orange"],
+    ):
+        x = recent_df.index
+        y = recent_df[f"{solid_name}_diff_p"] * 100
+        ax1.plot_date(
+            x,
+            y,
+            fmt="-",
+            label=solid_name,
+            color=color,
+        )
+        utils.add_labels(ax1, x, y, color=color)
+
+    recent_diff_series = (
+        recent_df[f"{main_acc_name}_diff_p"] - recent_df[f"{main_index_name}_diff_p"]
+    ) * 100
+
+    ax1.bar(
+        recent_df.index,
+        recent_diff_series,
+        width=0.5,
+        alpha=0.8,
+        color="dodgerblue",
+    )
+    utils.add_labels(ax1, recent_df.index, recent_diff_series, color="dodgerblue")
+
+    # Trendline
+    first_date = recent_df.index[0]
+    x = [(date - first_date).days for date in recent_df.index]
+    utils.add_trend_line(ax1, ticks=recent_df.index, x=x, y=recent_diff_series)
+
+    for single_name in secondary_acc_name_l:
+        ax1.plot_date(
+            recent_df.index,
+            recent_df[f"{single_name}_diff_p"] * 100,
+            fmt="-.",
+            alpha=0.7,
+            label=single_name,
+        )
+
+    for single_name in secondary_index_name_l:
+        ax1.plot_date(
+            recent_df.index,
+            recent_df[f"{single_name}_diff_p"] * 100,
+            fmt=":",
+            alpha=0.7,
+            label=single_name,
+        )
+
+    ax1.set_title("Growth for last 10 days")
+    ax1.set_xticks(ticks=recent_df.index)
+    ax1.legend()
+    ax1.grid(True)
+
+    # # * Cumulative growth bar plot
+    # Compare last 10 days
+    cum_acc_growth = (recent_df[f"{main_acc_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
+    cum_index_growth = (recent_df[f"{main_index_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
+    _plot_cum_growth(
+        ax=ax2,
+        day_num=10,
+        acc_name=main_acc_name,
+        cum_acc_growth=cum_acc_growth,
+        index_name=main_index_name,
+        cum_index_growth=cum_index_growth,
+    )
+
+    # Compare last 5 days
+    recent_df = process_utils.filter_latest_x_rows(recent_df, row_num=5)
+    cum_acc_growth = (recent_df[f"{main_acc_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
+    cum_index_growth = (recent_df[f"{main_index_name}_aux_diff_p"].product() - 1) * 100  # type: ignore
+    _plot_cum_growth(
+        ax=ax3,
+        day_num=5,
+        acc_name=main_acc_name,
+        cum_acc_growth=cum_acc_growth,
+        index_name=main_index_name,
+        cum_index_growth=cum_index_growth,
+    )
+
+    plt.show()

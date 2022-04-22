@@ -393,3 +393,97 @@ def plot_recent_growth(
     )
 
     plt.show()
+
+
+def plot_recent_xirr(
+    log_df: pd.DataFrame,
+    cf_df: pd.DataFrame,
+    recent_dates_index: pd.Index,
+    anchor_date: str,
+    main_acc_name: str,
+    main_index_name: str,
+    secondary_acc_name_l: list[str],
+    secondary_index_name_l: list[str],
+):
+    """
+    anchor_date: str, e.g. "2020-01-31"
+    """
+    all_acc_name_l = [main_acc_name] + secondary_acc_name_l
+    all_index_name_l = [main_index_name] + secondary_index_name_l
+
+    xirr_data = {name: [] for name in all_acc_name_l + all_index_name_l}
+    for idx in recent_dates_index:
+        for name in all_acc_name_l:
+            xirr_data[name].append(
+                utils.calc_cashflow_xirr(
+                    cashflow_df=cf_df,
+                    log_df=log_df,
+                    anchor_date=anchor_date,
+                    date_idx=idx,
+                    col_name=name,
+                    user_name_combined_l=all_acc_name_l,
+                )
+            )
+        for idx_name in all_index_name_l:
+            xirr_data[idx_name].append(
+                utils.calc_index_xirr(log_df, anchor_date, idx, idx_name)
+            )
+    xirr_df = pd.DataFrame(xirr_data, index=recent_dates_index)
+
+    fig, ax1 = plt.subplots(figsize=(18, 6))  # type: ignore
+
+    # * Last x days line plot
+
+    for combined_name in [main_acc_name, main_index_name]:
+        ax1.plot_date(
+            xirr_df.index,
+            xirr_df[combined_name] * 100,  # type: ignore
+            fmt="-",
+            label=combined_name,
+        )
+        utils.add_labels(ax1, xirr_df.index, xirr_df[combined_name] * 100)  # type: ignore
+
+        # Trendline
+        first_date = xirr_df.index[0]
+        x = [(date - first_date).days for date in xirr_df.index]
+        utils.add_trend_line(ax1, ticks=xirr_df.index, x=x, y=xirr_df[combined_name] * 100)  # type: ignore
+
+    recent_diff = (xirr_df[main_acc_name] - xirr_df[main_index_name]) * 100  # type: ignore
+
+    ax1.bar(
+        xirr_df.index,
+        recent_diff,
+        width=0.5,
+        alpha=0.8,
+    )
+    utils.add_labels(ax1, xirr_df.index, recent_diff)  # type: ignore
+
+    # Trendline
+    first_date = xirr_df.index[0]
+    x = [(date - first_date).days for date in xirr_df.index]
+    utils.add_trend_line(ax1, ticks=xirr_df.index, x=x, y=recent_diff)  # type: ignore
+
+    for single_name in secondary_acc_name_l:
+        ax1.plot_date(
+            xirr_df.index,
+            xirr_df[single_name] * 100,  # type: ignore
+            fmt="-.",
+            alpha=0.7,
+            label=single_name,
+        )
+
+    for single_name in secondary_index_name_l:
+        ax1.plot_date(
+            xirr_df.index,
+            xirr_df[single_name] * 100,  # type: ignore
+            fmt=":",
+            alpha=0.7,
+            label=single_name,
+        )
+
+    ax1.set_title(f"XIRR from {anchor_date} for last 10 days")
+    ax1.set_xticks(ticks=xirr_df.index)
+    ax1.legend(loc="center left")
+    ax1.grid(True)
+
+    plt.show()

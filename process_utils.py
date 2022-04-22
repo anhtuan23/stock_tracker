@@ -1,15 +1,15 @@
 import pandas as pd
 import numpy as np
-import utils
+import utils, read_utils, const
 
 
-def add_diff_column(df: pd.DataFrame) -> pd.DataFrame:
+def _add_diff_column(df: pd.DataFrame) -> pd.DataFrame:
     for col_name in df.columns.values:
         df[f"{col_name}_diff"] = df[col_name].diff()
     return df
 
 
-def remove_unchanged_rows(df: pd.DataFrame) -> pd.DataFrame:
+def _remove_unchanged_rows(df: pd.DataFrame) -> pd.DataFrame:
     """
     Assume that every row must either change together or stay the same together
     """
@@ -19,7 +19,7 @@ def remove_unchanged_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def compensate_diff_with_cashflow(
+def _compensate_diff_with_cashflow(
     df: pd.DataFrame,
     cashflow_df: pd.DataFrame,
     acc_name_l: list[str],
@@ -32,7 +32,7 @@ def compensate_diff_with_cashflow(
     return df
 
 
-def add_acc_combined_cols(
+def _add_acc_combined_cols(
     df: pd.DataFrame,
     acc_combined_name: str,
     acc_name_l: list[str],
@@ -46,7 +46,7 @@ def add_acc_combined_cols(
     return df
 
 
-def add_index_combined_cols(
+def _add_index_combined_cols(
     df: pd.DataFrame,
     index_combined_name: str,
     index_name_l: list[str],
@@ -60,7 +60,7 @@ def add_index_combined_cols(
     return df
 
 
-def add_diff_percent(
+def _add_diff_percent(
     df: pd.DataFrame,
     all_acc_name_l: list[str],
     index_name_combined_l: list[str],
@@ -76,6 +76,46 @@ def add_diff_percent(
         df[f"{name}_aux_diff_p"] = df[f"{name}_diff_p"] + 1
 
     return df
+
+
+def prepare_log_df_cf_df() -> tuple[pd.DataFrame, pd.DataFrame]:
+    # Read log table
+    log_df = read_utils.read_log()
+
+    # Read Cashflow
+    cf_df = read_utils.read_cashflow(const.ACC_USER_DICT, const.ACC_COMBINED_NAME)
+
+    # Add diff columns
+    log_df = _add_diff_column(log_df)
+
+    # Remove unchanged rows
+    log_df = _remove_unchanged_rows(log_df)
+
+    # Compensate diff with cashflow
+    log_df = _compensate_diff_with_cashflow(
+        df=log_df,
+        cashflow_df=cf_df,
+        acc_name_l=const.ACC_NAME_L,
+    )
+
+    # Add acc combined cols
+    log_df = _add_acc_combined_cols(
+        log_df,
+        acc_combined_name=const.ACC_COMBINED_NAME,
+        acc_name_l=const.ACC_NAME_L,
+    )
+
+    # Add index combined cols
+    log_df = _add_index_combined_cols(
+        log_df,
+        index_combined_name=const.INDEX_COMBINED_NAME,
+        index_name_l=const.INDEX_NAME_L,
+    )
+
+    # Calculate diff percent & auxiliary diff percent
+    log_df = _add_diff_percent(log_df, const.ALL_ACC_NAME_L, const.ALL_INDEX_NAME_L)
+
+    return log_df, cf_df
 
 
 def filter_latest_x_rows(df: pd.DataFrame, row_num: int) -> pd.DataFrame:

@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+
+# TODO: remove const
 import utils, read_utils, const
 
 
@@ -241,3 +243,56 @@ def get_user_df(
     )
 
     return user_df
+
+
+def get_overall_growth_xirr_df(
+    log_df: pd.DataFrame,
+    cf_df: pd.DataFrame,
+    anchor_date: str,
+    acc_name_l: list[str],
+    index_name_l: list[str],
+) -> pd.DataFrame:
+    recent_log_df: pd.DataFrame = log_df[log_df.index >= anchor_date]  # type: ignore
+    growth_xirr_df = pd.DataFrame(index=recent_log_df.index)
+    for name in acc_name_l + index_name_l:
+        # calculate growth using cumulative product since anchor date
+
+        growth_xirr_df[f"{name}_growth"] = (
+            recent_log_df[f"{name}_aux_diff_p"].cumprod() * 100
+        )
+
+    growth_xirr_df = growth_xirr_df.fillna(100)
+
+    for name in acc_name_l:
+        growth_xirr_df[f"{name}_xirr"] = (
+            recent_log_df.index.to_series().apply(
+                lambda date_idx: utils.calc_cashflow_xirr(
+                    cf_df,
+                    log_df,
+                    anchor_date,
+                    date_idx,
+                    name,
+                    acc_name_l,
+                )
+            )
+            * 100
+        )
+        # The first few xirr are too crazy to be included
+        growth_xirr_df.iloc[:5, growth_xirr_df.columns.get_loc(f"{name}_xirr")] = 0
+
+    for name in index_name_l:
+        growth_xirr_df[f"{name}_xirr"] = (
+            recent_log_df.index.to_series().apply(
+                lambda date_idx: utils.calc_index_xirr(
+                    log_df,
+                    anchor_date,
+                    date_idx,
+                    name,
+                )
+            )
+            * 100
+        )
+        # The first few xirr are too crazy to be included
+        growth_xirr_df.iloc[:5, growth_xirr_df.columns.get_loc(f"{name}_xirr")] = 0
+
+    return growth_xirr_df

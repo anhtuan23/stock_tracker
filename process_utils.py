@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
-
-# TODO: remove const
-import utils, read_utils, const
+import utils, read_utils
 
 
 def _add_diff_column(df: pd.DataFrame) -> pd.DataFrame:
@@ -65,10 +63,10 @@ def _add_index_combined_cols(
 def _add_diff_percent(
     df: pd.DataFrame,
     all_acc_name_l: list[str],
-    index_name_combined_l: list[str],
+    all_index_name_l: list[str],
 ) -> pd.DataFrame:
     """Add diff percent and auxiliary diff percent"""
-    for name in all_acc_name_l + index_name_combined_l:
+    for name in all_acc_name_l + all_index_name_l:
 
         df[f"{name}_diff_p"] = df[f"{name}_diff"] / (df[name] - df[f"{name}_diff"])
 
@@ -80,12 +78,17 @@ def _add_diff_percent(
     return df
 
 
-def prepare_log_df_cf_df() -> tuple[pd.DataFrame, pd.DataFrame]:
+def prepare_log_df_cf_df(
+    acc_user_dict: dict[str, list[str]],
+    acc_combined_name: str | None,
+    index_name_l: list[str],
+    index_combined_name: str | None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     # Read log table
     log_df = read_utils.read_log()
 
     # Read Cashflow
-    cf_df = read_utils.read_cashflow(const.ACC_USER_DICT, const.ACC_COMBINED_NAME)
+    cf_df = read_utils.read_cashflow(acc_user_dict, acc_combined_name)
 
     # Add diff columns
     log_df = _add_diff_column(log_df)
@@ -97,25 +100,41 @@ def prepare_log_df_cf_df() -> tuple[pd.DataFrame, pd.DataFrame]:
     log_df = _compensate_diff_with_cashflow(
         df=log_df,
         cashflow_df=cf_df,
-        acc_name_l=const.ACC_NAME_L,
+        acc_name_l=list(acc_user_dict.keys()),
     )
 
-    # Add acc combined cols
-    log_df = _add_acc_combined_cols(
-        log_df,
-        acc_combined_name=const.ACC_COMBINED_NAME,
-        acc_name_l=const.ACC_NAME_L,
-    )
+    if acc_combined_name is not None:
+        # Add acc combined cols
+        log_df = _add_acc_combined_cols(
+            log_df,
+            acc_combined_name=acc_combined_name,
+            acc_name_l=list(acc_user_dict.keys()),
+        )
 
-    # Add index combined cols
-    log_df = _add_index_combined_cols(
-        log_df,
-        index_combined_name=const.INDEX_COMBINED_NAME,
-        index_name_l=const.INDEX_NAME_L,
-    )
+    if index_combined_name is not None:
+        # Add index combined cols
+        log_df = _add_index_combined_cols(
+            log_df,
+            index_combined_name=index_combined_name,
+            index_name_l=index_name_l,
+        )
 
     # Calculate diff percent & auxiliary diff percent
-    log_df = _add_diff_percent(log_df, const.ALL_ACC_NAME_L, const.ALL_INDEX_NAME_L)
+    if acc_combined_name is None:
+        all_acc_name_l = list(acc_user_dict.keys())
+    else:
+        all_acc_name_l = list(acc_user_dict.keys()) + [acc_combined_name]
+
+    if index_combined_name is None:
+        all_index_name_l = index_name_l
+    else:
+        all_index_name_l = index_name_l + [index_combined_name]
+
+    log_df = _add_diff_percent(
+        log_df,
+        all_acc_name_l=all_acc_name_l,
+        all_index_name_l=all_index_name_l,
+    )
 
     return log_df, cf_df
 
@@ -239,7 +258,7 @@ def get_user_df(
     user_df = _add_diff_percent(
         user_df,
         all_acc_name_l=[acc_name] + user_name_l,
-        index_name_combined_l=[index_name],
+        all_index_name_l=[index_name],
     )
 
     return user_df

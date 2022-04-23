@@ -29,7 +29,7 @@ def _read_acc_cashflow(
 
 def read_cashflow(
     acc_user_dict: dict[str, list[str]],
-    acc_combined_name: str,
+    acc_combined_name: str | None,
 ) -> pd.DataFrame:
     acc_cf_df_list: list[pd.DataFrame] = []
     for acc_name, user_name_l_ in acc_user_dict.items():
@@ -40,6 +40,8 @@ def read_cashflow(
     assert cf_df.index.inferred_type == "datetime64"
     cf_df.fillna(0, inplace=True)
 
-    acc_only_cf_df = cf_df[list(acc_user_dict.keys())]
-    cf_df[acc_combined_name] = acc_only_cf_df.sum(axis=1)
+    if acc_combined_name is not None:
+        acc_only_cf_df = cf_df[list(acc_user_dict.keys())]
+        cf_df[acc_combined_name] = acc_only_cf_df.sum(axis=1)
+
     return cf_df

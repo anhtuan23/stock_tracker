@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import utils
-import process_utils
+import utils, process_utils, const
 
 
 def plot_indices_over_time(
@@ -34,23 +33,38 @@ def plot_indices_over_time(
 def plot_period_growth_xirr(
     growth_xirr_df: pd.DataFrame,
     period_name: str,
-    acc_name_l: list[str],
-    index_name_l: list[str],
-    acc_combined_name: str,
-    index_combined_name: str,
-    all_acc_name_l: list[str],
+    main_acc_name: str,
+    main_index_name: str,
+    secondary_acc_name_l: list[str],
+    secondary_index_name_l: list[str],
+    income_acc_name_l: list[str],
 ):
-
-    fig, (ax1, ax2, ax3, ax4, income_ax) = plt.subplots(
-        nrows=5,
-        ncols=1,
-        sharex=True,
-        figsize=(28, 16),
-    )  # type: ignore
+    if secondary_acc_name_l or secondary_index_name_l:
+        fig, (
+            growth_net_ax,
+            growth_diff_ax,
+            xirr_net_ax,
+            xirr_diff_ax,
+            income_ax,
+        ) = plt.subplots(
+            nrows=5,
+            ncols=1,
+            sharex=True,
+            figsize=(28, 16),
+        )  # type: ignore
+    else:
+        fig, (growth_diff_ax, xirr_diff_ax, income_ax) = plt.subplots(
+            nrows=3,
+            ncols=1,
+            sharex=True,
+            figsize=(28, 16),
+        )  # type: ignore
+        growth_net_ax = None
+        xirr_net_ax = None
 
     # ****** GROWTH ******
     def _plot(
-        net_ax: plt.Axes,
+        net_ax: plt.Axes | None,
         diff_ax: plt.Axes,
         type: str,
         income_ax: plt.Axes | None = None,
@@ -59,83 +73,76 @@ def plot_period_growth_xirr(
         Parameters
         type: is either 'growth' or 'xirr'
         """
-        # * Draw bar chart
+        ticks = np.arange(len(growth_xirr_df.index))
+        bar_width = 0.2
+        # *** Net Graph ***
+        if net_ax is not None:
+            # * Draw bar chart
 
-        x_indices = np.arange(len(growth_xirr_df.index))
+            bar_name_l = secondary_acc_name_l + secondary_index_name_l
+            bar_count = len(bar_name_l)
+            total_width = 0.6
+            bar_width = total_width / bar_count
 
-        bar_name_l = acc_name_l + index_name_l
-        bar_count = len(bar_name_l)
-        total_width = 0.6
-        bar_width = total_width / bar_count
+            for i, name in enumerate(bar_name_l):
+                position = ticks + i * bar_width
+                net_ax.bar(
+                    position,
+                    growth_xirr_df[f"{name}_{type}"],
+                    label=name,
+                    width=bar_width,
+                )
 
-        for i, name in enumerate(bar_name_l):
-            position = x_indices + i * bar_width
-            net_ax.bar(
-                position,
-                growth_xirr_df[f"{name}_{type}"],
-                label=name,
-                width=bar_width,
-            )
+            # move back half bar width to left most edge and then move to the middle of the bar group
+            ticks = ticks - (0.5 * bar_width) + (bar_count / 2 * bar_width)
 
-        # move back half bar width to left most edge and then move to the middle of the bar group
-        ticks = x_indices - (0.5 * bar_width) + (bar_count / 2 * bar_width)
+            # * Draw line chart
 
-        # * Draw line chart
+            for name, color in zip([main_acc_name, main_index_name], const.COLOR_LIST):
+                net_ax.plot(
+                    ticks,
+                    growth_xirr_df[f"{name}_{type}"],
+                    label=name,
+                    linestyle="--",
+                    c=color,
+                )
 
-        for name, color in zip(
-            [acc_combined_name, index_combined_name], ["orange", "orchid"]
-        ):
-            net_ax.plot(
+            net_ax.fill_between(
                 ticks,
-                growth_xirr_df[f"{name}_{type}"],
-                label=name,
-                linestyle="--",
-                c=color,
+                growth_xirr_df[f"{main_acc_name}_{type}"],
+                growth_xirr_df[f"{main_index_name}_{type}"],
+                where=(
+                    growth_xirr_df[f"{main_acc_name}_{type}"]
+                    >= growth_xirr_df[f"{main_index_name}_{type}"]  # type: ignore
+                ),
+                color="green",
+                interpolate=True,
+                alpha=0.25,
             )
 
-        net_ax.fill_between(
-            ticks,
-            growth_xirr_df[f"{acc_combined_name}_{type}"],
-            growth_xirr_df[f"{index_combined_name}_{type}"],
-            where=(
-                growth_xirr_df[f"{acc_combined_name}_{type}"]
-                >= growth_xirr_df[f"{index_combined_name}_{type}"]  # type: ignore
-            ),
-            color="green",
-            interpolate=True,
-            alpha=0.25,
-        )
+            net_ax.fill_between(
+                ticks,
+                growth_xirr_df[f"{main_acc_name}_{type}"],
+                growth_xirr_df[f"{main_index_name}_{type}"],
+                where=(
+                    growth_xirr_df[f"{main_acc_name}_{type}"] < growth_xirr_df[f"{main_index_name}_{type}"]  # type: ignore
+                ),
+                color="red",
+                interpolate=True,
+                alpha=0.25,
+            )
 
-        net_ax.fill_between(
-            ticks,
-            growth_xirr_df[f"{acc_combined_name}_{type}"],
-            growth_xirr_df[f"{index_combined_name}_{type}"],
-            where=(
-                growth_xirr_df[f"{acc_combined_name}_{type}"] < growth_xirr_df[f"{index_combined_name}_{type}"]  # type: ignore
-            ),
-            color="red",
-            interpolate=True,
-            alpha=0.25,
-        )
+            # * Decorations
 
-        # * Decorations
-        y = growth_xirr_df[f"{acc_combined_name}_{type}"]  # type: ignore
-        utils.add_labels(
-            ax=net_ax,
-            x=ticks,
-            y=y,
-            color="orange",
-        )
+            net_ax.set_title(f"{period_name} {type}")
+            net_ax.set_ylabel(f"{type} %")
+            net_ax.legend(loc="upper left")
 
-        net_ax.set_title(f"{period_name} {type}")
-        net_ax.set_ylabel(f"{type} %")
-        net_ax.legend(loc="upper left")
-
-        net_ax.grid(True)
+            net_ax.grid(True)
 
         # *** Diff ***
         diff_series = (
-            growth_xirr_df[f"{acc_combined_name}_{type}"] - growth_xirr_df[f"{index_combined_name}_{type}"]  # type: ignore
+            growth_xirr_df[f"{main_acc_name}_{type}"] - growth_xirr_df[f"{main_index_name}_{type}"]  # type: ignore
         )
         diff_ax.bar(
             ticks,
@@ -144,13 +151,21 @@ def plot_period_growth_xirr(
             label="Diff (user - index)",
             color="dodgerblue",
         )
+        # Labels
         utils.add_labels(
             ax=diff_ax,
             x=ticks,
             y=diff_series,
             color="dodgerblue",
         )
-        y = growth_xirr_df[f"{index_combined_name}_{type}"]
+        y = growth_xirr_df[f"{main_acc_name}_{type}"]  # type: ignore
+        utils.add_labels(
+            ax=diff_ax,
+            x=ticks,
+            y=y,
+            color="orange",
+        )
+        y = growth_xirr_df[f"{main_index_name}_{type}"]
         utils.add_labels(
             ax=diff_ax,
             x=ticks,
@@ -161,9 +176,7 @@ def plot_period_growth_xirr(
         utils.add_trend_line(diff_ax, ticks, ticks, diff_series)
 
         # Growth line
-        for name, color in zip(
-            [acc_combined_name, index_combined_name], ["orange", "orchid"]
-        ):
+        for name, color in zip([main_acc_name, main_index_name], ["orange", "orchid"]):
             diff_ax.plot(
                 ticks,
                 growth_xirr_df[f"{name}_{type}"],
@@ -181,12 +194,9 @@ def plot_period_growth_xirr(
         diff_ax.legend(loc="upper left")
         diff_ax.grid(True)
 
-        # Income
+        # *** Income ***
         if income_ax is not None:
-            for name, color in zip(
-                all_acc_name_l,
-                ["dodgerblue", "orchid", "orange"],
-            ):
+            for name, color in zip(income_acc_name_l, const.COLOR_LIST):
                 income_l = growth_xirr_df[f"{name}_income"]  # type: ignore
                 income_ax.plot(
                     ticks,
@@ -211,8 +221,8 @@ def plot_period_growth_xirr(
                 rotation=30,
             )
 
-    _plot(ax1, ax2, "growth", income_ax=income_ax)
-    _plot(ax3, ax4, "xirr")
+    _plot(growth_net_ax, growth_diff_ax, "growth", income_ax=income_ax)
+    _plot(xirr_net_ax, xirr_diff_ax, "xirr")
 
     plt.show()
 

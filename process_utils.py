@@ -238,7 +238,7 @@ def get_user_df(
 
     user_df = _add_diff_percent(
         user_df,
-        all_acc_name_l=[acc_name],
+        all_acc_name_l=[acc_name] + user_name_l,
         index_name_combined_l=[index_name],
     )
 

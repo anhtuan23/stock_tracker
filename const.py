@@ -1,8 +1,17 @@
 ACC1_NAME = "acc1"
 ACC2_NAME = "acc2"
+
+TN_USER_NAME = "tn"
+
 ACC_USER_DICT = {
-    ACC1_NAME: ["ta", "tn"],
+    ACC1_NAME: ["ta", TN_USER_NAME],
     ACC2_NAME: ["tl", "la"],
+}
+USER_NAME_FEE_DICT = {
+    TN_USER_NAME: 0.1,
+}
+USER_NAME_FEE_ANCHOR_DATE = {
+    TN_USER_NAME: "2022-04-21",
 }
 
 ACC_NAME_L = list(ACC_USER_DICT.keys())

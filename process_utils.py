@@ -144,11 +144,12 @@ def filter_latest_x_rows(df: pd.DataFrame, row_num: int) -> pd.DataFrame:
 
 
 def add_period_cols(df: pd.DataFrame) -> pd.DataFrame:
-    df["Y"] = df.index.to_period("Y")  # type: ignore
-    df["Q"] = df.index.to_period("Q")  # type: ignore
-    df["M"] = df.index.to_period("M")  # type: ignore
-    df["W"] = df.index.to_period("W")  # type: ignore
-    return df
+    periodic_df = df.copy()
+    periodic_df["Y"] = periodic_df.index.to_period("Y")  # type: ignore
+    periodic_df["Q"] = periodic_df.index.to_period("Q")  # type: ignore
+    periodic_df["M"] = periodic_df.index.to_period("M")  # type: ignore
+    periodic_df["W"] = periodic_df.index.to_period("W")  # type: ignore
+    return periodic_df
 
 
 def get_period_df(

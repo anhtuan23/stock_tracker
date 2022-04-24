@@ -501,7 +501,6 @@ def plot_recent_income(
     daily_df: pd.DataFrame,
     num_days: int,
     name_l: list[str],
-    color_l: list[str],
 ):
     # Filter recent days
     daily_df = process_utils.filter_latest_x_rows(daily_df, row_num=num_days)
@@ -510,7 +509,7 @@ def plot_recent_income(
 
     for name, color in zip(
         name_l,
-        color_l,
+        const.COLOR_LIST,
     ):
         income_l = daily_df[f"{name}_diff"]
         ax.plot_date(

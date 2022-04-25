@@ -4,7 +4,7 @@ ACC2_NAME = "acc2"
 TN_USER_NAME = "tn"
 
 ACC_USER_DICT = {
-    ACC1_NAME: ["ta", TN_USER_NAME],
+    ACC1_NAME: ["ta", TN_USER_NAME, "at"],
     ACC2_NAME: ["tl", "la"],
 }
 USER_NAME_FEE_DICT = {

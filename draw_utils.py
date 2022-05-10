@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
-import utils, process_utils, const
+import pandas as pd
+
+import const
+import process_utils
+import utils
 
 
 def plot_indices_over_time(
@@ -525,7 +528,7 @@ def plot_recent_income(
 
     ax.set_title("Daily Income")
     ax.grid(True)
-    ax.legend()
+    ax.legend(loc="upper left")
 
     plt.show()
 

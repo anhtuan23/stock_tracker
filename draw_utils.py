@@ -623,6 +623,7 @@ def plot_growth_xirr_over_time(
         if type == "growth":
             growth_xirr_df = growth_xirr_df.applymap(lambda e: e - 100)
 
+        # Plot trend of acc and index
         for combined_name in [main_acc_name, main_index_name]:
             ax.plot_date(
                 growth_xirr_df.index,
@@ -636,6 +637,24 @@ def plot_growth_xirr_over_time(
                 f"{growth_xirr_df[f'{combined_name}_{type}'].iloc[-1]:.1f}",  # type: ignore
             )
 
+        # Plot diff between acc and index
+        diff_series = (
+            growth_xirr_df[f"{main_acc_name}_{type}"]
+            - growth_xirr_df[f"{main_index_name}_{type}"]
+        )
+        ax.plot_date(
+            growth_xirr_df.index,
+            diff_series,
+            fmt="--",
+            label="diff",
+        )
+        ax.text(
+            growth_xirr_df.index[-1],
+            diff_series.iloc[-1],  # type: ignore
+            f"{diff_series.iloc[-1]:.1f}",  # type: ignore
+        )
+
+        # Plot secondaries trends
         for single_name in secondary_acc_name_l:
             ax.plot_date(
                 growth_xirr_df.index,

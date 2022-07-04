@@ -8,7 +8,7 @@ ACC_USER_DICT = {
     ACC2_NAME: ["tl", "la"],
 }
 USER_NAME_FEE_DICT = {
-    TN_USER_NAME: 0.1,
+    TN_USER_NAME: 0.15,
 }
 USER_NAME_FEE_ANCHOR_DATE = {
     TN_USER_NAME: "2022-07-01",

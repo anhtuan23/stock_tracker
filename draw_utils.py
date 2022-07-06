@@ -255,7 +255,13 @@ def plot_profit_invest_pies(profit_invest_list: list[tuple[str, float, float]]):
     """
     chart_num = len(profit_invest_list)
     width_per_pie = 6
-    fig, ax_l = plt.subplots(figsize=(width_per_pie * chart_num, 5), ncols=chart_num, facecolor="white")  # type: ignore
+    if chart_num > 1:
+        fig, ax_l = plt.subplots(figsize=(width_per_pie * chart_num, 5), ncols=chart_num, facecolor="white")  # type: ignore
+    else:
+        # when there is only 1 pie, returned ax is not iterable -> cannot be used in zip() below
+        fig, ax = plt.subplots(figsize=(width_per_pie, 5), facecolor="white")
+        # make ax_l iterable
+        ax_l = [ax]
 
     for (name, profit, invest), ax in zip(profit_invest_list, ax_l):  # type: ignore
         nav = profit + invest
